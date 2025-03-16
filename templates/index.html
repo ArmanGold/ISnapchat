@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture Image</title>
+</head>
+<body>
+    <h1>Capture Image and Send to Telegram</h1>
+    <video id="video" width="640" height="480" autoplay></video>
+    <button id="captureButton">Capture</button>
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <script>
+        const video = document.getElementById('video');
+        const captureButton = document.getElementById('captureButton');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+
+        // Request camera access
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                video.srcObject = stream;
+            })
+            .catch((err) => {
+                alert("Error accessing the camera: " + err);
+            });
+
+        captureButton.addEventListener('click', function () {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageBase64 = canvas.toDataURL('image/png');
+
+            fetch('/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: imageBase64 })
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+
+        video.addEventListener('play', function() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+        });
+    </script>
+</body>
+</html>
